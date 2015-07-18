@@ -19,35 +19,33 @@ void PICTURES_OF_SPIDERMAN(void){
 		init_uart();
 		DDRB |= (1<<4);	// Set PB 4 as output
 		
-		TCCR0A |= (1<<WGM01);	// set up pwm CTC(clear timer on compare) mode set.
-		TIMSK0 |= (1<<OCIE0A) | (1<<TOIE0);
+		TCCR0A |= (1<<WGM01);	// set up pwm CTC mode
+		TIMSK0 |= (1<<OCIE0A) | (1<<TOIE0); //count, overflow masks
 		OCR0A = 20;	// for 10us
 		
-		EICRA |= (1<<ISC00)|(1<< ISC01)|(1<<ISC11);
-		EIMSK |= (1<<INT0)|(1<<INT1);
-		sei();			// Enable global interrupts
+		EICRA |= (1<<ISC00)|(1<< ISC01)|(1<<ISC11); //set PD2 rising edge and PD3 falling edge. (pins are wired together)
+		EIMSK |= (1<<INT0)|(1<<INT1);	//enable external pin interrupts
+		sei();	// Enable global interrupts
 		
 		PORTB |= (1<<PB4);	//send pulse to ranger
 		TCCR0B |= (1<<CS01);	// pre scale clk/8
 	}
 ISR (TIMER0_COMPA_vect) // stop transmitting
 {
-	TCCR0A &=~ (1<<WGM01);
-	TCCR0B &=~ (1<<CS01);	
-	PORTB  &= 0;	
-	TIMSK0 &=~ (1<<OCIE0A);
-	TCNT0 = 0;
+	TCCR0A &=~ (1<<WGM01); //turn off ctc 
+	TCCR0B &=~ (1<<CS01); //turn off pre scaler					take off visor.... how it should be!	
+	PORTB  &= 0;	//turn off pulse to ranger
+	TIMSK0 &=~ (1<<OCIE0A); //turn off mask
+	TCNT0 = 0; //set counter to 0
 }
 ISR (INT0_vect){
-	TCCR0B |= (1<<CS00);	// no pre-scale
-	TCCR0A |= (1<<WGM00);	
+	TCCR0B |= (1<<CS00);	// no pre-scale					no visor, good Canadian boy!
+	TCCR0A |= (1<<WGM00);	// normal mode 
 	
 }
 ISR (INT1_vect){
-	TCCR0A &=~ (1<<WGM00);
-	TCCR0B &=~ (1<<CS00);	// no pre-scale
-	
-	
+	TCCR0A &=~ (1<<WGM00);	// chief wgm is counting
+	TCCR0B &=~ (1<<CS00);	// turn off clock
 	
 	d = (2*ovflw*17.29)/58;
 	if(d >= 401){
@@ -58,14 +56,15 @@ ISR (INT1_vect){
 	ovflw = 0;
 	TCNT0 = 0;
 	
-	TCCR0A |= (1<<WGM01);	// set up pwm CTC(clear timer on compare) mode set.	
-	TIMSK0 |= (1<<OCIE0A) | (1<<TOIE0);
-	OCR0A = 20;	// for 10us
-	PORTB |= (1<<PB4);	//send pulse to ranger
-	TCCR0B |= (1<<CS01);	// pre scale clk/8
-
+	TCCR0A |= (1<<WGM01);	//Turn CTC back on
+	TIMSK0 |= (1<<OCIE0A);	//turn mask back on for 10u pulse 
+	PORTB |= (1<<PB4);		 //send pulse to ranger
+	TCCR0B |= (1<<CS01);	// turn clock back on
+	
 }
 ISR (TIMER0_OVF_vect) 
 {
 	ovflw ++;
 }
+
+
