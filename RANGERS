@@ -7,7 +7,7 @@
 int ovflw = 0;
 int count = 0;
 double d = 0;
-double garbage = 400;
+int garbage = 400;
 
 void PICTURES_OF_SPIDERMAN(void);		//Ranger setup
 int main(void)
@@ -33,7 +33,7 @@ void PICTURES_OF_SPIDERMAN(void){
 ISR (TIMER0_COMPA_vect) // stop transmitting
 {
 	TCCR0A &=~ (1<<WGM01); //turn off ctc 
-	TCCR0B &=~ (1<<CS01); //turn off pre scaler					take off visor.... how it should be!	
+	TCCR0B &=~ (1<<CS01); //turn off pre scaler					take off visor.... old time hockey	
 	PORTB  &= 0;	//turn off pulse to ranger
 	TIMSK0 &=~ (1<<OCIE0A); //turn off mask
 	TCNT0 = 0; //set counter to 0
@@ -66,5 +66,6 @@ ISR (TIMER0_OVF_vect)
 {
 	ovflw ++;
 }
+
 
 
