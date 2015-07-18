@@ -1,0 +1,71 @@
+#include <avr/io.h>
+#include <avr/interrupt.h>
+#include<stdio.h>
+#include<math.h>
+#include "uartmaster.h"
+
+int ovflw = 0;
+int count = 0;
+double d = 0;
+double garbage = 400;
+
+void PICTURES_OF_SPIDERMAN(void);		//Ranger setup
+int main(void)
+{	
+	PICTURES_OF_SPIDERMAN();
+	while(1){}
+}
+void PICTURES_OF_SPIDERMAN(void){
+		init_uart();
+		DDRB |= (1<<4);	// Set PB 4 as output
+		
+		TCCR0A |= (1<<WGM01);	// set up pwm CTC(clear timer on compare) mode set.
+		TIMSK0 |= (1<<OCIE0A) | (1<<TOIE0);
+		OCR0A = 20;	// for 10us
+		
+		EICRA |= (1<<ISC00)|(1<< ISC01)|(1<<ISC11);
+		EIMSK |= (1<<INT0)|(1<<INT1);
+		sei();			// Enable global interrupts
+		
+		PORTB |= (1<<PB4);	//send pulse to ranger
+		TCCR0B |= (1<<CS01);	// pre scale clk/8
+	}
+ISR (TIMER0_COMPA_vect) // stop transmitting
+{
+	TCCR0A &=~ (1<<WGM01);
+	TCCR0B &=~ (1<<CS01);	
+	PORTB  &= 0;	
+	TIMSK0 &=~ (1<<OCIE0A);
+	TCNT0 = 0;
+}
+ISR (INT0_vect){
+	TCCR0B |= (1<<CS00);	// no pre-scale
+	TCCR0A |= (1<<WGM00);	
+	
+}
+ISR (INT1_vect){
+	TCCR0A &=~ (1<<WGM00);
+	TCCR0B &=~ (1<<CS00);	// no pre-scale
+	
+	
+	
+	d = (2*ovflw*17.29)/58;
+	if(d >= 401){
+		d = garbage;
+	}
+	printf("dist.: %d \n",(int) d);
+	
+	ovflw = 0;
+	TCNT0 = 0;
+	
+	TCCR0A |= (1<<WGM01);	// set up pwm CTC(clear timer on compare) mode set.	
+	TIMSK0 |= (1<<OCIE0A) | (1<<TOIE0);
+	OCR0A = 20;	// for 10us
+	PORTB |= (1<<PB4);	//send pulse to ranger
+	TCCR0B |= (1<<CS01);	// pre scale clk/8
+
+}
+ISR (TIMER0_OVF_vect) 
+{
+	ovflw ++;
+}
